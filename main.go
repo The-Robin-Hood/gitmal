@@ -23,6 +23,7 @@ var (
 	flagPreviewThemes bool
 	flagMinify        bool
 	flagGzip          bool
+	flagMultipleRepo  bool
 )
 
 type Params struct {
@@ -36,123 +37,72 @@ type Params struct {
 	DefaultRef git.Ref
 }
 
-func main() {
-	if _, ok := os.LookupEnv("GITMAL_PPROF"); ok {
-		f, err := os.Create("cpu.prof")
-		if err != nil {
-			panic(err)
-		}
-		err = pprof.StartCPUProfile(f)
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-		defer pprof.StopCPUProfile()
-		memProf, err := os.Create("mem.prof")
-		if err != nil {
-			panic(err)
-		}
-		defer memProf.Close()
-		defer pprof.WriteHeapProfile(memProf)
-	}
-
-	_, noFiles := os.LookupEnv("NO_FILES")
-	_, noCommitsList := os.LookupEnv("NO_COMMITS_LIST")
-
-	flag.StringVar(&flagOwner, "owner", "", "Project owner")
-	flag.StringVar(&flagName, "name", "", "Project name")
-	flag.StringVar(&flagOutput, "output", "output", "Output directory for generated HTML files")
-	flag.StringVar(&flagBranches, "branches", "", "Regex for branches to include")
-	flag.StringVar(&flagDefaultBranch, "default-branch", "", "Default branch to use (autodetect master or main)")
-	flag.StringVar(&flagTheme, "theme", "github", "Style theme")
-	flag.BoolVar(&flagPreviewThemes, "preview-themes", false, "Preview available themes")
-	flag.BoolVar(&flagMinify, "minify", false, "Minify all generated HTML files")
-	flag.BoolVar(&flagGzip, "gzip", false, "Compress all generated HTML files")
-	flag.Usage = usage
-	flag.Parse()
-
-	input := "."
-	args := flag.Args()
-	if len(args) == 1 {
-		input = args[0]
-	}
-	if len(args) > 1 {
-		panic("Multiple repos not supported yet")
-	}
-
-	if flagPreviewThemes {
-		previewThemes()
-		os.Exit(0)
-	}
-
-	outputDir, err := filepath.Abs(flagOutput)
+func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bool) error {
+	outputDir, err := filepath.Abs(outputRoot)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	absInput, err := filepath.Abs(input)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	input = absInput
 
-	if flagName == "" {
-		flagName = filepath.Base(input)
-		flagName = strings.TrimSuffix(flagName, ".git")
+	repoName := flagName
+	if repoName == "" {
+		repoName = strings.TrimSuffix(filepath.Base(input), ".git")
 	}
 
 	themeColor, ok := themeStyles[flagTheme]
 	if !ok {
-		panic("Invalid theme: " + flagTheme)
+		return fmt.Errorf("invalid theme %q", flagTheme)
 	}
 
 	branchesFilter, err := regexp.Compile(flagBranches)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	branches, err := git.Branches(input, branchesFilter, flagDefaultBranch)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	tags, err := git.Tags(input)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	if flagDefaultBranch == "" {
+	defaultBranch := flagDefaultBranch
+	if defaultBranch == "" {
 		if containsBranch(branches, "master") {
-			flagDefaultBranch = "master"
+			defaultBranch = "master"
 		} else if containsBranch(branches, "main") {
-			flagDefaultBranch = "main"
+			defaultBranch = "main"
 		} else {
-			echo("No default branch found. Specify one using --default-branch flag.")
-			os.Exit(1)
+			return fmt.Errorf("No default branch found. Specify one using --default-branch flag.")
 		}
 	}
 
-	if !containsBranch(branches, flagDefaultBranch) {
-		echo(fmt.Sprintf("Default branch %q not found.", flagDefaultBranch))
-		echo("Specify a valid branch using --default-branch flag.")
-		os.Exit(1)
+	if !containsBranch(branches, defaultBranch) {
+		return fmt.Errorf("Default branch %q not found", defaultBranch)
 	}
 
 	if yes, a, b := hasConflictingBranchNames(branches); yes {
-		echo(fmt.Sprintf("Conflicting branchs %q and %q, both want to use %q dir name.", a, b, a.DirName()))
-		os.Exit(1)
+		return fmt.Errorf("Conflicting branchs %q and %q, both want to use %q dir name.", a, b, a.DirName())
 	}
 
 	// Start generating pages
 
 	params := Params{
 		Owner:      flagOwner,
-		Name:       flagName,
+		Name:       repoName,
 		RepoDir:    input,
-		OutputDir:  outputDir,
+		OutputDir:  filepath.Join(outputDir, repoName),
 		Style:      flagTheme,
 		Dark:       themeColor == "dark",
-		DefaultRef: git.NewRef(flagDefaultBranch),
+		DefaultRef: git.NewRef(defaultBranch),
 	}
 
 	commits := make(map[string]git.Commit)
@@ -190,7 +140,7 @@ func main() {
 
 	echo(fmt.Sprintf("> %s: %d branches, %d tags, %d commits", params.Name, len(branches), len(tags), len(commits)))
 
-	if err := generateBranches(branches, flagDefaultBranch, params); err != nil {
+	if err := generateBranches(branches, defaultBranch, params); err != nil {
 		panic(err)
 	}
 
@@ -206,7 +156,7 @@ func main() {
 				panic(err)
 			}
 
-			if branch.String() == flagDefaultBranch {
+			if branch.String() == defaultBranch {
 				defaultBranchFiles = files
 			}
 
@@ -230,7 +180,7 @@ func main() {
 	}
 
 	// Back to the default branch
-	params.Ref = git.NewRef(flagDefaultBranch)
+	params.Ref = git.NewRef(defaultBranch)
 
 	// Commits pages generation
 	echo("> generating commits...")
@@ -259,6 +209,83 @@ func main() {
 		echo("> post-processing HTML...")
 		if err := postProcessHTML(params.OutputDir, flagMinify, flagGzip); err != nil {
 			panic(err)
+		}
+	}
+	return nil
+}
+
+func main() {
+	if _, ok := os.LookupEnv("GITMAL_PPROF"); ok {
+		f, err := os.Create("cpu.prof")
+		if err != nil {
+			panic(err)
+		}
+		err = pprof.StartCPUProfile(f)
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+		defer pprof.StopCPUProfile()
+		memProf, err := os.Create("mem.prof")
+		if err != nil {
+			panic(err)
+		}
+		defer memProf.Close()
+		defer pprof.WriteHeapProfile(memProf)
+	}
+
+	_, noFiles := os.LookupEnv("NO_FILES")
+	_, noCommitsList := os.LookupEnv("NO_COMMITS_LIST")
+
+	flag.StringVar(&flagOwner, "owner", "", "Project owner")
+	flag.StringVar(&flagName, "name", "", "Project name")
+	flag.StringVar(&flagOutput, "output", "output", "Output directory for generated HTML files")
+	flag.StringVar(&flagBranches, "branches", "", "Regex for branches to include")
+	flag.StringVar(&flagDefaultBranch, "default-branch", "", "Default branch to use (autodetect master or main)")
+	flag.StringVar(&flagTheme, "theme", "github", "Style theme")
+	flag.BoolVar(&flagPreviewThemes, "preview-themes", false, "Preview available themes")
+	flag.BoolVar(&flagMinify, "minify", false, "Minify all generated HTML files")
+	flag.BoolVar(&flagGzip, "gzip", false, "Compress all generated HTML files")
+	flag.Usage = usage
+	flag.Parse()
+
+	args := flag.Args()
+
+	if len(args) == 0 {
+		args = []string{"."}
+	}
+
+	flagMultipleRepo = len(args) > 1
+
+	if flagPreviewThemes {
+		previewThemes()
+		os.Exit(0)
+	}
+	
+	skippedRepos := []string{}
+	processedRepos := []string{}
+
+	for _, repo := range args {
+		echo("Processing " + repo)
+
+		if err := processRepo(repo, flagOutput, noFiles, noCommitsList); err != nil {
+			echo(fmt.Sprintf("Error processing %s: %v", repo, err))
+			echo("Skipping " + repo)
+			echo("\n ===============================\n")
+			skippedRepos = append(skippedRepos, repo)
+			continue
+		}
+
+		echo("Done processing " + repo)
+		echo("\n ===============================\n")
+		processedRepos = append(processedRepos, repo)
+	}
+
+	echo(fmt.Sprintf("Processed %d repos, skipped %d repos", len(processedRepos), len(skippedRepos)))
+	if len(skippedRepos) > 0 {
+		echo("Skipped repos:")
+		for _, repo := range skippedRepos {
+			echo(" - " + repo)
 		}
 	}
 }
