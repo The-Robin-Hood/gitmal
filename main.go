@@ -38,15 +38,15 @@ type Params struct {
 	DefaultRef git.Ref
 }
 
-func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bool) error {
+func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bool) (templates.RepoSummary, error) {
 	outputDir, err := filepath.Abs(outputRoot)
 	if err != nil {
-		return err
+		return templates.RepoSummary{}, err
 	}
 
 	absInput, err := filepath.Abs(input)
 	if err != nil {
-		return err
+		return templates.RepoSummary{}, err
 	}
 	input = absInput
 
@@ -57,22 +57,22 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 
 	themeColor, ok := themeStyles[flagTheme]
 	if !ok {
-		return fmt.Errorf("invalid theme %q", flagTheme)
+		return templates.RepoSummary{}, fmt.Errorf("invalid theme %q", flagTheme)
 	}
 
 	branchesFilter, err := regexp.Compile(flagBranches)
 	if err != nil {
-		return err
+		return templates.RepoSummary{}, err
 	}
 
 	branches, err := git.Branches(input, branchesFilter, flagDefaultBranch)
 	if err != nil {
-		return err
+		return templates.RepoSummary{}, err
 	}
 
 	tags, err := git.Tags(input)
 	if err != nil {
-		return err
+		return templates.RepoSummary{}, err
 	}
 
 	defaultBranch := flagDefaultBranch
@@ -82,16 +82,16 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 		} else if containsBranch(branches, "main") {
 			defaultBranch = "main"
 		} else {
-			return fmt.Errorf("No default branch found. Specify one using --default-branch flag.")
+			return templates.RepoSummary{}, fmt.Errorf("No default branch found. Specify one using --default-branch flag.")
 		}
 	}
 
 	if !containsBranch(branches, defaultBranch) {
-		return fmt.Errorf("Default branch %q not found", defaultBranch)
+		return templates.RepoSummary{}, fmt.Errorf("Default branch %q not found", defaultBranch)
 	}
 
 	if yes, a, b := hasConflictingBranchNames(branches); yes {
-		return fmt.Errorf("Conflicting branchs %q and %q, both want to use %q dir name.", a, b, a.DirName())
+		return templates.RepoSummary{}, fmt.Errorf("Conflicting branchs %q and %q, both want to use %q dir name.", a, b, a.DirName())
 	}
 
 	// Start generating pages
@@ -243,7 +243,9 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 			panic(err)
 		}
 	}
-	return nil
+
+	defaultRef := git.NewRef(defaultBranch)
+	return buildRepoSummary(params, defaultBranch, len(branches), len(tags), commitsDetailsFor[defaultRef]), nil
 }
 
 func main() {
@@ -296,11 +298,20 @@ func main() {
 	
 	skippedRepos := []string{}
 	processedRepos := []string{}
+	repoSummaries := []templates.RepoSummary{}
+
+	themeColor, themeOK := themeStyles[flagTheme]
+	if !themeOK {
+		echo(fmt.Sprintf("invalid theme %q", flagTheme))
+		os.Exit(1)
+	}
+	themeDark := themeColor == "dark"
 
 	for _, repo := range args {
 		echo("Processing " + repo)
 
-		if err := processRepo(repo, flagOutput, noFiles, noCommitsList); err != nil {
+		summary, err := processRepo(repo, flagOutput, noFiles, noCommitsList)
+		if err != nil {
 			echo(fmt.Sprintf("Error processing %s: %v", repo, err))
 			echo("Skipping " + repo)
 			echo("\n ===============================\n")
@@ -311,6 +322,23 @@ func main() {
 		echo("Done processing " + repo)
 		echo("\n ===============================\n")
 		processedRepos = append(processedRepos, repo)
+		repoSummaries = append(repoSummaries, summary)
+	}
+
+	if len(repoSummaries) >= 2 {
+		echo("> generating portal index...")
+		if err := generatePortalIndex(repoSummaries, flagOutput, flagOwner, themeDark); err != nil {
+			echo(fmt.Sprintf("Error generating portal index: %v", err))
+			os.Exit(1)
+		}
+		if flagMinify || flagGzip {
+			portalIndex := filepath.Join(flagOutput, "index.html")
+			echo("> post-processing portal index...")
+			if err := postProcessHTMLFile(portalIndex, flagMinify, flagGzip); err != nil {
+				echo(fmt.Sprintf("Error post-processing portal index: %v", err))
+				os.Exit(1)
+			}
+		}
 	}
 
 	echo(fmt.Sprintf("Processed %d repos, skipped %d repos", len(processedRepos), len(skippedRepos)))
