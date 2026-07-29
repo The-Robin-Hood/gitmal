@@ -258,6 +258,8 @@
 </head>
 <body>
 {{ template "svg" . }}
+
+{{if .CurrentRefDir}}
 <header class="repo-header">
     <div class="repo-header-content">
         <a href="{{ .RootHref }}index.html" class="repo-title">
@@ -268,6 +270,7 @@
         </a>
     </div>
 </header>
+{{end}}
 <main>
     <div class="main-content">
         {{ template "body" . }}
