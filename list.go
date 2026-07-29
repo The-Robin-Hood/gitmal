@@ -17,7 +17,7 @@ import (
 	"github.com/antonmedv/gitmal/pkg/templates"
 )
 
-func generateLists(files []git.Blob, params Params) error {
+func generateLists(files []git.Blob, params Params, branchEntries []templates.BranchEntry) error {
 	// Build directory indexes
 	type dirInfo struct {
 		subdirs map[string]struct{}
@@ -194,6 +194,7 @@ func generateLists(files []git.Blob, params Params) error {
 						HeaderParams: templates.HeaderParams{
 							Ref:         params.Ref,
 							Breadcrumbs: breadcrumbs(params.Name, dirPath, false),
+							Branches: 	branchEntries,	
 						},
 						Ref:        params.Ref,
 						ParentHref: parent,

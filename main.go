@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/antonmedv/gitmal/pkg/git"
+	"github.com/antonmedv/gitmal/pkg/templates"
 
 	flag "github.com/spf13/pflag"
 )
@@ -144,6 +145,19 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 		panic(err)
 	}
 
+	
+	branchEntries := make([]templates.BranchEntry, 0, len(branches))
+	for _, b := range branches {
+	   branchEntries = append(branchEntries, templates.BranchEntry{
+			Name:        b.String(),
+			DirName: 	   b.DirName(),
+			Href:        filepath.ToSlash(filepath.Join("blob", b.DirName()) + "/index.html"),
+			IsDefault:   b.String() == params.Ref.String(),
+			CommitsHref: filepath.ToSlash(filepath.Join("commits", b.DirName(), "index.html")),
+		})
+	}
+
+
 	var defaultBranchFiles []git.Blob
 
 	for i, branch := range branches {
@@ -160,12 +174,12 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 				defaultBranchFiles = files
 			}
 
-			err = generateBlobs(files, params)
+			err = generateBlobs(files, params, branchEntries)
 			if err != nil {
 				panic(err)
 			}
 
-			err = generateLists(files, params)
+			err = generateLists(files, params, branchEntries)
 			if err != nil {
 				panic(err)
 			}
@@ -199,7 +213,7 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 		if len(defaultBranchFiles) == 0 {
 			panic("No files found for default branch")
 		}
-		err = generateIndex(defaultBranchFiles, params)
+		err = generateIndex(defaultBranchFiles, params, branchEntries)
 		if err != nil {
 			panic(err)
 		}

@@ -21,7 +21,8 @@ import (
 	"github.com/antonmedv/gitmal/pkg/templates"
 )
 
-func generateBlobs(files []git.Blob, params Params) error {
+func generateBlobs(files []git.Blob, params Params, branchEntries []templates.BranchEntry) error {
+
 	// Prepare shared, read-only resources
 	var css strings.Builder
 	style := styles.Get(params.Style)
@@ -45,10 +46,7 @@ func generateBlobs(files []git.Blob, params Params) error {
 	filesSet := links.BuildFileSet(files)
 
 	// Bounded worker pool
-	workers := runtime.NumCPU()
-	if workers < 1 {
-		workers = 1
-	}
+	workers := max(runtime.NumCPU(), 1)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -132,6 +130,7 @@ func generateBlobs(files []git.Blob, params Params) error {
 							filesSet,
 						)
 
+
 						err = templates.MarkdownTemplate.ExecuteTemplate(f, "layout.gohtml", templates.MarkdownParams{
 							LayoutParams: templates.LayoutParams{
 								Title:         fmt.Sprintf("%s/%s at %s", params.Name, blob.Path, params.Ref),
@@ -144,7 +143,8 @@ func generateBlobs(files []git.Blob, params Params) error {
 							},
 							HeaderParams: templates.HeaderParams{
 								Ref:         params.Ref,
-								Breadcrumbs: breadcrumbs(params.Name, blob.Path, true),
+								Breadcrumbs: breadcrumbs(params.Name, blob.Path, true),						
+								Branches:  branchEntries,
 							},
 							Blob:    blob,
 							Content: template.HTML(contentHTML),
@@ -203,6 +203,7 @@ func generateBlobs(files []git.Blob, params Params) error {
 							HeaderParams: templates.HeaderParams{
 								Ref:         params.Ref,
 								Breadcrumbs: breadcrumbs(params.Name, blob.Path, true),
+								Branches:    branchEntries,
 							},
 							CSS:      template.CSS(css.String()),
 							Blob:     blob,
@@ -223,7 +224,7 @@ func generateBlobs(files []git.Blob, params Params) error {
 
 	// Start workers
 	wg.Add(workers)
-	for i := 0; i < workers; i++ {
+	for range workers {
 		go workerFn()
 	}
 

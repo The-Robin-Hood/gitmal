@@ -8,6 +8,7 @@
         border-bottom-left-radius: var(--border-radius);
         border-bottom-right-radius: var(--border-radius);
         overflow-x: auto;
+				max-width:980px;
       }
 
       .files .dir {
@@ -59,7 +60,8 @@
 
       {{ if .Readme }}
       .markdown-container {
-        padding-inline: 16px;
+        max-width: 980px;
+				padding-inline: 16px;
         border: 1px solid var(--c-divider);
         border-radius: 8px;
         overflow-x: auto;

@@ -79,6 +79,7 @@ type HeaderParams struct {
 	Ref         git.Ref
 	Header      string
 	Breadcrumbs []Breadcrumb
+	Branches    []BranchEntry
 }
 
 type Breadcrumb struct {
@@ -129,6 +130,7 @@ type BranchesParams struct {
 
 type BranchEntry struct {
 	Name        string
+	DirName     string
 	Href        string
 	IsDefault   bool
 	CommitsHref string
