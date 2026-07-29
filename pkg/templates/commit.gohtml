@@ -10,6 +10,7 @@
       }
 
       .commit {
+				width: 100%;
         display: flex;
         flex-direction: column;
         gap: 16px;
@@ -79,7 +80,8 @@
       }
 
       .commit-layout {
-        display: grid;
+        width:100%;
+				display: grid;
         grid-template-columns: 1fr;
         gap: 16px;
       }
@@ -220,7 +222,7 @@
 {{ end }}
 
 {{ define "body" }}
-    <h1>Commit <code>{{ .Commit.ShortHash }}</code></h1>
+    <h1 style="width:100%;">Commit <code>{{ .Commit.ShortHash }}</code></h1>
 
     <div class="commit">
         <div class="commit-info">
@@ -283,7 +285,7 @@
         <div class="files">
             {{ range .FileViews }}
                 <section id="{{ .Path }}" class="file-section">
-                    <div class="header-container">
+                    <div class="header-container" style="max-width:var(--max-content-width)">
                         <header class="file-header">
                             {{ if .IsRename }}
                                 <div class="path">{{ .OldName }} → {{ .NewName }}</div>

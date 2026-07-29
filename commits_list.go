@@ -13,7 +13,7 @@ import (
 
 const commitsPerPage = 100
 
-func generateLogForBranch(allCommits []git.Commit, params Params) error {
+func generateLogForBranch(allCommits []git.Commit, params Params, branchEntries []templates.BranchEntry) error {
 	total := len(allCommits)
 	totalPages := (total + commitsPerPage - 1) / commitsPerPage
 
@@ -71,6 +71,7 @@ func generateLogForBranch(allCommits []git.Commit, params Params) error {
 			},
 			HeaderParams: templates.HeaderParams{
 				Header: "Commits",
+				Branches: branchEntries,
 			},
 			Ref:     params.Ref,
 			Commits: pageCommits,

@@ -75,6 +75,12 @@ type LayoutParams struct {
 	Selected      string
 }
 
+type CommitDetails struct {
+	TotalCommits int
+	LastCommitDate string
+	LastCommit git.Commit 
+}
+
 type HeaderParams struct {
 	Ref         git.Ref
 	Header      string
@@ -134,6 +140,7 @@ type BranchEntry struct {
 	Href        string
 	IsDefault   bool
 	CommitsHref string
+	CommitDetails CommitDetails
 }
 
 type TagsParams struct {

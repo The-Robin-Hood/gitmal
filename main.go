@@ -108,6 +108,7 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 
 	commits := make(map[string]git.Commit)
 	commitsFor := make(map[git.Ref][]git.Commit, len(branches))
+	commitsDetailsFor := make(map[git.Ref]templates.CommitDetails, len(branches))
 
 	for _, branch := range branches {
 		commitsFor[branch], err = git.Commits(branch, params.RepoDir)
@@ -122,6 +123,15 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 			commit.Branch = branch
 			commits[commit.Hash] = commit
 		}
+
+		branchCommits := commitsFor[branch]
+	    details := templates.CommitDetails{TotalCommits: len(branchCommits)}
+		if len(branchCommits) > 0 {
+			last := branchCommits[0]
+			details.LastCommit = last
+			details.LastCommitDate = timeAgo(last.Date)
+		}
+		commitsDetailsFor[branch] = details
 	}
 
 	// Add commits from tags
@@ -141,6 +151,14 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 
 	echo(fmt.Sprintf("> %s: %d branches, %d tags, %d commits", params.Name, len(branches), len(tags), len(commits)))
 
+
+
+	for branch, c := range commitsDetailsFor {
+		fmt.Printf("> %s: branch %s has %d commits, last commit date: %s , commit hash : %s , commit message : %s\n", params.Name, branch, c.TotalCommits, c.LastCommitDate, c.LastCommit.Hash, c.LastCommit.Subject)
+	}
+
+
+
 	if err := generateBranches(branches, defaultBranch, params); err != nil {
 		panic(err)
 	}
@@ -154,9 +172,9 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 			Href:        filepath.ToSlash(filepath.Join("blob", b.DirName()) + "/index.html"),
 			IsDefault:   b.String() == params.Ref.String(),
 			CommitsHref: filepath.ToSlash(filepath.Join("commits", b.DirName(), "index.html")),
+			CommitDetails: commitsDetailsFor[b],
 		})
 	}
-
 
 	var defaultBranchFiles []git.Blob
 
@@ -186,7 +204,7 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 		}
 
 		if !noCommitsList {
-			err = generateLogForBranch(commitsFor[branch], params)
+			err = generateLogForBranch(commitsFor[branch], params,branchEntries)
 			if err != nil {
 				panic(err)
 			}
