@@ -13,15 +13,13 @@
         overflow: hidden;
         width: 100%;
 				max-width: 980px;
-      }
+      	margin-top: 10px;
+			}
 
       .repo-row {
-        display: flex;
-        align-items: flex-start;
         gap: 12px;
         padding: 12px 16px;
         border-bottom: 1px solid var(--c-border);
-        background-color: var(--c-bg-elv);
         text-decoration: none;
         color: inherit;
         cursor: pointer;
@@ -96,8 +94,154 @@
         color: var(--c-text-3);
       }
 
+			.repo-table {
+				width: 100%;
+				border-collapse: collapse;
+				table-layout: fixed;
+				max-width: 980px;
+			}
+
+			.repo-table th {
+					text-align: left;
+					font-size: 0.75rem;
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+					color: var(--text-muted, #888);
+					padding: 8px 12px;
+					border-bottom: 1px solid var(--border, #2a2a2a);
+			}
+
+			.repo-table td {
+					padding: 10px 12px;
+					border-bottom: 1px solid var(--border, #1e1e1e);
+					vertical-align: middle;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+			}
+
+			.repo-table tr.repo-row {
+					cursor: pointer;
+			}
+
+			.repo-table tr.repo-row:hover {
+					background: var(--bg-hover, #161616);
+			}
+
+			.repo-name-cell a {
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					text-decoration: none;
+					color: var(--text, #eee);
+			}
+
+			.repo-icon {
+					flex-shrink: 0;
+					color: var(--text-muted, #888);
+			}
+
+			.repo-subject {
+					color: var(--text-muted, #999);
+					font-size: 0.9rem;
+			}
+
+			.repo-commits {
+					color: var(--text-muted, #999);
+			}
+
+			.repo-updated {
+					color: var(--text-muted, #999);
+			}
+
+
+
+@media (max-width: 768px) {
+    .repo-table {
+        table-layout: auto;
+    }
+
+    .repo-table th:nth-child(3),
+    .repo-table td:nth-child(3),
+    .repo-table th:nth-child(4),
+    .repo-table td:nth-child(4) {
+        display: none;
+    }
+
+    .repo-table col:nth-child(1),
+    .repo-table col:nth-child(2),
+    .repo-table col:nth-child(3),
+    .repo-table col:nth-child(4) {
+        width: auto !important;
+    }
+
+    .repo-table col:nth-child(1) {
+        width: 25% !important;
+    }
+
+    .repo-table col:nth-child(2) {
+        width: 75% !important;
+    }
+}
+
+
+
+		.pagination {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+        margin-top: 12px;
+        padding: 8px 0;
+        color: var(--c-text-2);
+      }
+
+      .pagination button,
+      .pagination span.btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border: 1px solid var(--c-border);
+        border-radius: 6px;
+        background: var(--c-bg-elv);
+        color: var(--c-text-1);
+        text-decoration: none;
+        font-size: 13px;
+      }
+
+      .pagination button:hover {
+        color: var(--c-brand-2);
+        border-color: var(--c-brand-2);
+      }
+
+      .pagination .disabled,button:disabled {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      .pagination .page-indicator {
+        margin: 0 4px;
+        font-size: 13px;
+        color: var(--c-text-2);
+      }
+
+
+
       @media (max-width: 640px) {
-        .repo-row {
+			.repo-name-cell {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .repo-table td {
+          white-space: normal;
+          overflow-wrap: break-word;
+          word-wrap: break-word;
+        }
+
+			 .repo-row {
           flex-wrap: wrap;
         }
 
@@ -106,37 +250,125 @@
           justify-content: flex-start;
           text-align: left;
         }
+
+				.repo-subject{
+
+				}
       }
     </style>
 {{ end }}
 
 {{ define "body" }}
-    <h1>{{ .Heading }}</h1>
-    <p class="repo-count">{{ .Total }} {{ if eq .Total 1 }}repository{{ else }}repositories{{ end }}</p>
-    <div class="repos">
-        {{ if .Repos }}
-            {{ range .Repos }}
-                <a  href="{{ .Href }}" class="repo-row">
-                    <svg aria-hidden="true" width="16" height="16" class="repo-icon">
-                        <use xlink:href="#repo"></use>
-                    </svg>
-                    <div class="repo-main">
-                        <span class="repo-name">{{ .DisplayName }}</span>
-                        {{ if .LastCommitSubject }}
-                            <div class="repo-subject">{{ .LastCommitSubject }}</div>
-                        {{ end }}
-                    </div>
-                    <div class="repo-meta">
-                        <span>{{ .TotalCommits }} commits</span>
-                        {{ if .LastCommitDate }}
-                            <span class="meta-sep">·</span>
-                            <span style="width:160px">updated {{ .LastCommitDate }}</span>
-                        {{ end }}
-                    </div>
-                </a>
-            {{ end }}
-        {{ else }}
-            <div class="repo-row">(no repositories)</div>
-        {{ end }}
-    </div>
+<div style="width:100%;max-width:980px">
+    <div style="display:flex;gap:18px">  
+		<svg aria-hidden="true" focusable="false" width="75px" height="75px" >
+			<use xlink:href="#git"></use>
+		</svg>
+		<div>
+			<h1>{{ .Heading }}</h1>
+			<p class="repo-count">{{ .Total }} repos · Substance over spectacle</p>
+		</div>
+		</div>
+</div>
+<div class="repos">
+    {{ if .Repos }}
+        <table class="repo-table">
+            <colgroup>
+                <col style="width:25%">
+                <col style="width:40%">
+                <col style="width:15%">
+                <col style="width:20%">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Commits</th>
+                    <th>Last Update</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range .Repos }}
+                    <tr class="repo-row" onclick="window.location='{{ .Href }}'">
+                        <td class="repo-name-cell">
+                            <a href="{{ .Href }}">
+                                <svg aria-hidden="true" width="16" height="16" class="repo-icon">
+                                    <use xlink:href="#repo"></use>
+                                </svg>
+                                <span class="repo-name">{{ .DisplayName }}</span>
+                            </a>
+                        </td>
+                        <td class="repo-subject">{{ if .Description }}{{ .Description }}{{ end }}</td>
+                        <td class="repo-commits">{{ .TotalCommits }}</td>
+                        <td class="repo-updated">{{ if .LastCommitDate }}{{ .LastCommitDate }}{{ end }}</td>
+                    </tr>
+                {{ end }}
+            </tbody>
+        </table>
+    {{ else }}
+        <div class="repo-row">(no repositories)</div>
+    {{ end }}
+</div>
+
+
+
+
+<div class="pagination">
+			<button id="prevPage" class="btn">← Prev</button>
+			<span id="pageInfo" class="page-indicator"></span>
+			<button id="nextPage" class="btn">Next →</button>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const rows = document.querySelectorAll(".repo-row");
+    const rowsPerPage = 5;
+
+    let currentPage = 1;
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+    const prev = document.getElementById("prevPage");
+    const next = document.getElementById("nextPage");
+    const info = document.getElementById("pageInfo");
+
+		if (rows.length <= rowsPerPage) {
+			document.querySelector(".pagination").style.display = "none";
+		}
+
+    function renderPage() {
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        rows.forEach((row, index) => {
+            row.style.display =
+                index >= start && index < end ? "" : "none";
+        });
+
+        info.textContent = `Page ${currentPage} of ${totalPages}`;
+
+        prev.disabled = currentPage === 1;
+        next.disabled = currentPage === totalPages;
+    }
+
+    prev.addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderPage();
+        }
+    });
+
+    next.addEventListener("click", () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderPage();
+        }
+    });
+
+    renderPage();
+});
+</script>
+
+
+
+
 {{ end }}

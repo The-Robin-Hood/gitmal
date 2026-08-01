@@ -218,9 +218,11 @@ type RepoSummary struct {
 	Name              string
 	Owner             string
 	DisplayName       string
+	Description 			string
 	Href              string
 	DefaultBranch     string
 	TotalCommits      int
+	LastCommit        git.Commit
 	LastCommitDate    string
 	LastCommitSubject string
 	BranchCount       int
