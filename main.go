@@ -84,8 +84,25 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 			defaultBranch = "main"
 		} else {
 			//check if .git/default-branch exists
+
+			isItBareRepo := false
+			gitDir := filepath.Join(input, ".git")
+			if fi, err := os.Stat(gitDir); err == nil && fi.IsDir() {
+				// .git is a directory, so it's a non-bare repo
+				isItBareRepo = false
+			} else if fi, err := os.Stat(input); err == nil && fi.IsDir() {
+				// .git is not a directory, so check if the input itself is a bare repo
+				if _, err := os.Stat(filepath.Join(input, "HEAD")); err == nil {
+					isItBareRepo = true
+				}
+			}
 			defaultBranchFile := filepath.Join(input, ".git", "default-branch")
-			fmt.Println("Default branch not found (master or main).", "Checking for" , defaultBranchFile)
+
+			if isItBareRepo {
+				defaultBranchFile = filepath.Join(input, "default-branch")
+			}
+
+			fmt.Println("Default branch not found (master or main).", "Checking for", defaultBranchFile)
 			if _, err := os.Stat(defaultBranchFile); err == nil {
 				data, err := os.ReadFile(defaultBranchFile)
 				if err != nil {
@@ -97,6 +114,7 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 				fmt.Print("Type the default branch name (e.g., master or main): ")
 				fmt.Scanln(&defaultBranch)
 				//store it .git/default-branch for future runs
+
 				err := os.WriteFile(defaultBranchFile, []byte(defaultBranch), 0644)
 				if err != nil {
 					return templates.RepoSummary{}, fmt.Errorf("failed to write default branch file: %w", err)
