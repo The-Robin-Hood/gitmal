@@ -83,7 +83,7 @@
           -moz-text-size-adjust: none;
           -webkit-text-size-adjust: none;
           text-size-adjust: none;
-          min-height: 100vh;
+          min-height: 100dvh;
           display: flex;
           flex-direction: column;
         }
@@ -123,8 +123,8 @@
           display: flex;
           align-items: center;
           max-width: var(--max-content-width);
-          margin-inline: auto;
-          padding: 16px;
+          gap : 12px;
+          padding: 16px 0px;
         }
 
         .repo-title {
@@ -268,15 +268,24 @@
 
 {{if .CurrentRefDir}}
 <header class="repo-header">
-    <div class="repo-header-content">
-        <a href="{{ .RootHref }}index.html" class="repo-title">
-            <svg aria-hidden="true" width="16" height="16" class="repo-title-icon">
-                <use xlink:href="#repo"></use>
-            </svg>
-            <span>{{ .Name }}</span>
-        </a>
-    </div>
+      <div class="repo-header-content">
+				<svg aria-hidden="true" focusable="false" width="50px" height="50px">
+          <use xlink:href="#git"></use>
+        </svg>
+				<div style="display:flex;flex-direction:column;">
+					<div>
+					<a href="/" class="repo-title"><span> index </span></a>
+					<span style="margin: 0 5px"> : </span>
+					<a href="{{ .RootHref }}" class="repo-title">
+						<span>{{.Name}}</span>
+					</a>
+					</div>
+					<span style="color:var(--c-text-2);font-size:14px;line-height:1.25;margin-top:4px;">
+						{{.Description}} </span>
+				</div>
+      </div>
 </header>
+
 {{end}}
 <main>
     <div class="main-content">

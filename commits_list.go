@@ -64,13 +64,14 @@ func generateLogForBranch(allCommits []git.Commit, params Params, branchEntries 
 			LayoutParams: templates.LayoutParams{
 				Title:         fmt.Sprintf("Commits %s %s", dot, params.Name),
 				Name:          params.Name,
+				Description:   params.Description,
 				Dark:          params.Dark,
 				RootHref:      rootHref,
 				CurrentRefDir: params.Ref.DirName(),
 				Selected:      "commits",
 			},
 			HeaderParams: templates.HeaderParams{
-				Header: "Commits",
+				Header:   "Commits",
 				Branches: branchEntries,
 			},
 			Ref:     params.Ref,

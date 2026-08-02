@@ -50,6 +50,7 @@ func generateBranches(branches []git.Ref, defaultBranch string, params Params) e
 		LayoutParams: templates.LayoutParams{
 			Title:         fmt.Sprintf("Branches %s %s", dot, params.Name),
 			Name:          params.Name,
+			Description:   params.Description,
 			Dark:          params.Dark,
 			RootHref:      rootHref,
 			CurrentRefDir: params.DefaultRef.DirName(),

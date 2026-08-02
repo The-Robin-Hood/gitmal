@@ -27,6 +27,7 @@ func generateTags(entries []git.Tag, params Params) error {
 		LayoutParams: templates.LayoutParams{
 			Title:         fmt.Sprintf("Tags %s %s", dot, params.Name),
 			Name:          params.Name,
+			Description:   params.Description,
 			Dark:          params.Dark,
 			RootHref:      rootHref,
 			CurrentRefDir: params.DefaultRef.DirName(),

@@ -238,6 +238,7 @@ func generateCommitPage(commit git.Commit, params Params) error {
 		LayoutParams: templates.LayoutParams{
 			Title:         fmt.Sprintf("%s %s %s@%s", commit.Subject, dot, params.Name, commit.ShortHash),
 			Name:          params.Name,
+			Description:   params.Description,
 			Dark:          params.Dark,
 			RootHref:      rootHref,
 			CurrentRefDir: currentRef.DirName(),

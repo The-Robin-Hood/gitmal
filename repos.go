@@ -112,18 +112,20 @@ func getRepoDescriptionFromGitHubAPI(owner, repo string) string {
 
 }
 
-func buildRepoSummary(params Params, defaultBranch string, branches int, tags int, details templates.CommitDetails) templates.RepoSummary {
-
-	description := getRepoDescriptionFromGitHubAPI("The-Robin-Hood", params.Name)
+func getRepoDescription(owner,repoDir string) string {
+	description := getRepoDescriptionFromGitHubAPI(owner, repoDir)
+	if description != "" {
+		return description
+	}
 	if description == "" {
-		descriptionFile := filepath.Join(params.RepoDir, ".git", "description")
-		descriptionCmd := exec.Command("git", "-C", params.RepoDir, "rev-parse", "--git-dir")
+		descriptionFile := filepath.Join(repoDir, ".git", "description")
+		descriptionCmd := exec.Command("git", "-C", repoDir, "rev-parse", "--git-dir")
 		output, err := descriptionCmd.Output()
 		if err != nil {
 			fmt.Println("Error executing git rev-parse command:", err)
 		} else {
 			gitDir := strings.TrimSpace(string(output))
-			descriptionFile = filepath.Join(params.RepoDir, gitDir, "description")
+			descriptionFile = filepath.Join(repoDir, gitDir, "description")
 		}
 		if _, err := os.Stat(descriptionFile); err == nil {
 			content, err := os.ReadFile(descriptionFile)
@@ -135,10 +137,15 @@ func buildRepoSummary(params Params, defaultBranch string, branches int, tags in
 			}
 		}
 	}
+	return description
+}
+
+func buildRepoSummary(params Params, defaultBranch string, branches int, tags int, details templates.CommitDetails) templates.RepoSummary {
+
 
 	summary := templates.RepoSummary{
 		Name:          params.Name,
-		Description:   description,
+		Description:   params.Description,
 		Owner:         params.Owner,
 		DisplayName:   repoDisplayName(params.Owner, params.Name),
 		Href:          filepath.ToSlash(filepath.Join(params.Name, "index.html")),

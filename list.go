@@ -185,6 +185,7 @@ func generateLists(files []git.Blob, params Params, branchEntries []templates.Br
 						LayoutParams: templates.LayoutParams{
 							Title:         title,
 							Name:          params.Name,
+							Description:   params.Description,
 							Dark:          params.Dark,
 							CSSMarkdown:   CSSMarkdown,
 							RootHref:      rootHref,

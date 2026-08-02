@@ -102,6 +102,7 @@ func generateIndex(files []git.Blob, params Params, branchEntries []templates.Br
 		LayoutParams: templates.LayoutParams{
 			Title:         title,
 			Name:          params.Name,
+			Description:   params.Description,
 			Dark:          params.Dark,
 			CSSMarkdown:   cssMarkdown(params.Dark),
 			RootHref:      rootHref,
@@ -111,7 +112,7 @@ func generateIndex(files []git.Blob, params Params, branchEntries []templates.Br
 		HeaderParams: templates.HeaderParams{
 			Ref:         params.Ref,
 			Breadcrumbs: breadcrumbs(params.Name, "", false),
-			Branches:   branchEntries, 
+			Branches:    branchEntries,
 		},
 		Ref:    params.Ref,
 		Dirs:   subdirEntries,

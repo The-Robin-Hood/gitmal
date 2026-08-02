@@ -322,7 +322,11 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const rows = document.querySelectorAll(".repo-row");
-    const rowsPerPage = 5;
+    let rowsPerPage = 10;
+		
+		if (window.innerHeight < 800) {
+			rowsPerPage = 5;
+		}
 
     let currentPage = 1;
     const totalPages = Math.ceil(rows.length / rowsPerPage);

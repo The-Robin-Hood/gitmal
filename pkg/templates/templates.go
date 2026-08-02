@@ -72,6 +72,7 @@ var PreviewTemplate = Must(New("preview").Parse(previewContent))
 type LayoutParams struct {
 	Title         string
 	Name          string
+	Description    string
 	Dark          bool
 	CSSMarkdown   CSS
 	RootHref      string

@@ -134,6 +134,7 @@ func generateBlobs(files []git.Blob, params Params, branchEntries []templates.Br
 						err = templates.MarkdownTemplate.ExecuteTemplate(f, "layout.gohtml", templates.MarkdownParams{
 							LayoutParams: templates.LayoutParams{
 								Title:         fmt.Sprintf("%s/%s at %s", params.Name, blob.Path, params.Ref),
+								Description:   params.Description,
 								Dark:          params.Dark,
 								CSSMarkdown:   cssMarkdown(params.Dark),
 								Name:          params.Name,
@@ -194,6 +195,7 @@ func generateBlobs(files []git.Blob, params Params, branchEntries []templates.Br
 						err = templates.BlobTemplate.ExecuteTemplate(f, "layout.gohtml", templates.BlobParams{
 							LayoutParams: templates.LayoutParams{
 								Title:         fmt.Sprintf("%s/%s at %s", params.Name, blob.Path, params.Ref),
+								Description:   params.Description,
 								Dark:          params.Dark,
 								Name:          params.Name,
 								RootHref:      rootHref,

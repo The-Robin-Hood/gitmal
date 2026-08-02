@@ -30,6 +30,7 @@ var (
 type Params struct {
 	Owner      string
 	Name       string
+	Description string
 	RepoDir    string
 	Ref        git.Ref
 	OutputDir  string
@@ -99,6 +100,7 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 	params := Params{
 		Owner:      flagOwner,
 		Name:       repoName,
+		Description: getRepoDescription("The-Robin-Hood", repoName),
 		RepoDir:    input,
 		OutputDir:  filepath.Join(outputDir, repoName),
 		Style:      flagTheme,
