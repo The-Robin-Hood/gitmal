@@ -28,15 +28,15 @@ var (
 )
 
 type Params struct {
-	Owner      string
-	Name       string
+	Owner       string
+	Name        string
 	Description string
-	RepoDir    string
-	Ref        git.Ref
-	OutputDir  string
-	Style      string
-	Dark       bool
-	DefaultRef git.Ref
+	RepoDir     string
+	Ref         git.Ref
+	OutputDir   string
+	Style       string
+	Dark        bool
+	DefaultRef  git.Ref
 }
 
 func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bool) (templates.RepoSummary, error) {
@@ -83,9 +83,25 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 		} else if containsBranch(branches, "main") {
 			defaultBranch = "main"
 		} else {
-			// ask to the user to specify a default branch to type now 
-			fmt.Print("Type the default branch name (e.g., master or main): ")
-			fmt.Scanln(&defaultBranch)
+			//check if .git/default-branch exists
+			defaultBranchFile := filepath.Join(input, ".git", "default-branch")
+			fmt.Println("Default branch not found (master or main).", "Checking for" , defaultBranchFile)
+			if _, err := os.Stat(defaultBranchFile); err == nil {
+				data, err := os.ReadFile(defaultBranchFile)
+				if err != nil {
+					return templates.RepoSummary{}, fmt.Errorf("failed to read default branch file: %w", err)
+				}
+				defaultBranch = strings.TrimSpace(string(data))
+			} else {
+				// ask to the user to specify a default branch to type now
+				fmt.Print("Type the default branch name (e.g., master or main): ")
+				fmt.Scanln(&defaultBranch)
+				//store it .git/default-branch for future runs
+				err := os.WriteFile(defaultBranchFile, []byte(defaultBranch), 0644)
+				if err != nil {
+					return templates.RepoSummary{}, fmt.Errorf("failed to write default branch file: %w", err)
+				}
+			}
 		}
 	}
 
@@ -100,14 +116,14 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 	// Start generating pages
 
 	params := Params{
-		Owner:      flagOwner,
-		Name:       repoName,
+		Owner:       flagOwner,
+		Name:        repoName,
 		Description: getRepoDescription("The-Robin-Hood", repoName),
-		RepoDir:    input,
-		OutputDir:  filepath.Join(outputDir, repoName),
-		Style:      flagTheme,
-		Dark:       themeColor == "dark",
-		DefaultRef: git.NewRef(defaultBranch),
+		RepoDir:     input,
+		OutputDir:   filepath.Join(outputDir, repoName),
+		Style:       flagTheme,
+		Dark:        themeColor == "dark",
+		DefaultRef:  git.NewRef(defaultBranch),
 	}
 
 	commits := make(map[string]git.Commit)
@@ -129,7 +145,7 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 		}
 
 		branchCommits := commitsFor[branch]
-	    details := templates.CommitDetails{TotalCommits: len(branchCommits)}
+		details := templates.CommitDetails{TotalCommits: len(branchCommits)}
 		if len(branchCommits) > 0 {
 			last := branchCommits[0]
 			details.LastCommit = last
@@ -155,27 +171,22 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 
 	echo(fmt.Sprintf("> %s: %d branches, %d tags, %d commits", params.Name, len(branches), len(tags), len(commits)))
 
-
-
 	for branch, c := range commitsDetailsFor {
 		fmt.Printf("> %s: branch %s has %d commits, last commit date: %s , commit hash : %s , commit message : %s\n", params.Name, branch, c.TotalCommits, c.LastCommitDate, c.LastCommit.Hash, c.LastCommit.Subject)
 	}
-
-
 
 	if err := generateBranches(branches, defaultBranch, params); err != nil {
 		panic(err)
 	}
 
-	
 	branchEntries := make([]templates.BranchEntry, 0, len(branches))
 	for _, b := range branches {
-	   branchEntries = append(branchEntries, templates.BranchEntry{
-			Name:        b.String(),
-			DirName: 	   b.DirName(),
-			Href:        filepath.ToSlash(filepath.Join("blob", b.DirName()) + "/index.html"),
-			IsDefault:   b.String() == params.Ref.String(),
-			CommitsHref: filepath.ToSlash(filepath.Join("commits", b.DirName(), "index.html")),
+		branchEntries = append(branchEntries, templates.BranchEntry{
+			Name:          b.String(),
+			DirName:       b.DirName(),
+			Href:          filepath.ToSlash(filepath.Join("blob", b.DirName()) + "/index.html"),
+			IsDefault:     b.String() == params.Ref.String(),
+			CommitsHref:   filepath.ToSlash(filepath.Join("commits", b.DirName(), "index.html")),
 			CommitDetails: commitsDetailsFor[b],
 		})
 	}
@@ -208,7 +219,7 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 		}
 
 		if !noCommitsList {
-			err = generateLogForBranch(commitsFor[branch], params,branchEntries)
+			err = generateLogForBranch(commitsFor[branch], params, branchEntries)
 			if err != nil {
 				panic(err)
 			}
@@ -299,7 +310,7 @@ func main() {
 		previewThemes()
 		os.Exit(0)
 	}
-	
+
 	skippedRepos := []string{}
 	processedRepos := []string{}
 	repoSummaries := []templates.RepoSummary{}
