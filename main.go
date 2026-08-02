@@ -83,7 +83,9 @@ func processRepo(input string, outputRoot string, noFiles bool, noCommitsList bo
 		} else if containsBranch(branches, "main") {
 			defaultBranch = "main"
 		} else {
-			return templates.RepoSummary{}, fmt.Errorf("No default branch found. Specify one using --default-branch flag.")
+			// ask to the user to specify a default branch to type now 
+			fmt.Print("Type the default branch name (e.g., master or main): ")
+			fmt.Scanln(&defaultBranch)
 		}
 	}
 
